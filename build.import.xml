@@ -47,6 +47,12 @@
     </phingcall>
   </target>
 
+  <target name="clean"
+          depends="init"
+          description="Clean up all the files created by the build process.">
+    <delete dir="${build.artifacts.dir}" quiet="true"/>
+  </target>
+
   <!-- =====================================================================
        Setup targets: Used to setup dependencies for use in normal targets.
        ===================================================================== -->
