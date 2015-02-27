@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<project name="phingdrupaldistributions" phingVersion="2.10.0">
+  <target name="build" depends="init">
+    <echo msg="Hello, ${phing.project.name}!"/>
+  </target>
+
+  <!-- Performs all the internal setup necessary to run any normal task. -->
+  <target name="init" depends="internal:load-properties" hidden="true">
+  </target>
+
+  <!-- Loads the build.properties with the correct defaults set. -->
+  <target name="internal:load-properties" unless="internal.done.load-properties" hidden="true">
+    <property name="internal.done.load-properties" value="true" />
+
+    <!-- Make an alias to our internal build dir that's easier to type. -->
+    <property name="internal.build.dir" value="${phing.dir.phingdrupaldistributions}" />
+
+    <!-- First load the defaults. -->
+    <property file="${internal.build.dir}/build.default.properties" override="true"/>
+
+    <!-- Next, load the local properties. -->
+    <property file="${phing.dir}/build.properties" override="true" />
+  </target>
+</project>
