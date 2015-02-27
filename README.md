@@ -20,10 +20,10 @@ Installing dependencies
 
 First, you need to install Phing:
 
-  pear channel-discover pear.phing.info
-  pear install phing/phing
+    pear channel-discover pear.phing.info
+    pear install phing/phing
 
 Then you need to install VersionControl_Git:
 
-  pear install VersionControl_Git-0.4.4
+    pear install VersionControl_Git-0.4.4
 
