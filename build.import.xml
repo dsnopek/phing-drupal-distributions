@@ -6,8 +6,55 @@
     <!-- TODO: Display some tips on how to use this build script! -->
   </target>
 
-  <!-- Setup drush in order to execute drush tasks. -->
-  <target name="setup-drush" depends="init, internal:setup-dirs">
+  <target name="make-profile"
+          depends="init, setup-drush"
+          description="Build the modules, libraries and themes for this profile."
+          unless="project.make-profile.skip">
+    <if>
+      <or>
+        <!-- TODO: we should be able to do better than this... -->
+        <not><available file="${phing.dir}/modules/contrib" type="dir"/></not>
+        <not><available file="${phing.dir}/modules/${phing.project.name}" type="dir"/></not>
+        <and>
+          <isset property="project.make-profile.rebuild"/>
+          <istrue value="${project.make-profile.rebuild}"/>
+        </and>
+      </or>
+      <then>
+
+        <drush command="make" assume="yes">
+          <option name="no-core"/>
+          <option name="contrib-destination">.</option>
+          <param>${drush.make.file}</param>
+          <option name="concurrency">${drush.make.concurrency}</option>
+        </drush>
+
+        <!-- Set property to prevent target from being executed multiple times -->
+        <property name="project.make-profile.skip" value="true"/>
+      </then>
+      <else>
+        <echo msg="Profile has already been made. Run 'phing rebuild-profile' to force it to be made again."/>
+      </else>
+    </if>
+  </target>
+
+  <target name="rebuild-profile"
+          depends="init"
+          description="Force a rebuild of the modules, libraries and themes for this profile.">
+
+    <phingcall target="make-profile">
+      <property name="project.make-profile.rebuild" value="1"/>
+    </phingcall>
+  </target>
+
+  <!-- =====================================================================
+       Setup targets: Used to setup dependencies for use in normal targets.
+       ===================================================================== -->
+
+  <target name="setup-drush"
+          depends="init, internal:setup-dirs"
+          description="Setup drush in order to execute drush tasks."
+          hidden="true">
     <!-- TODO: If the user doesn't have drush, or the wrong version of drush
          we could actually use composer to install it. -->
 
@@ -35,8 +82,14 @@
     -->
   </target>
 
-  <!-- Setup composer so that we can use it to install stuff. -->
-  <target name="setup-composer" depends="init, internal:setup-dirs">
+  <!-- TODO: We should have a "setup-git" task that errors if it can't find the
+       'git' program on the current path and automatically installs
+       VersionControl_Git if found (putting it on the PHP class path). -->
+
+  <target name="setup-composer"
+          depends="init, internal:setup-dirs"
+          description="Setup composer so that we can use it to install stuff."
+          hidden="true">
      <property name="build.tools.composer" value="${build.tools.dir}/composer.phar" />
 
      <if>
@@ -49,24 +102,36 @@
      </if>
   </target>
 
-  <!-- Performs all the internal setup necessary to run all normal tasks. -->
-  <target name="init" depends="internal:load-properties" hidden="true">
+  <!-- =====================================================================
+       Internal targets: Used for really low-level setup.
+       ===================================================================== -->
+
+  <target name="init"
+          depends="internal:load-properties"
+          description="Performs the internal setup necessary to run ALL normal tasks."
+          hidden="true">
   </target>
 
-  <!-- Loads the build.properties with the correct defaults set. -->
-  <target name="internal:load-properties" hidden="true">
+  <target name="internal:load-properties"
+          description="Loads the build.properties with the correct defaults set."
+          hidden="true">
     <!-- Make an alias to our internal build dir that's easier to type. -->
     <property name="internal.build.dir" value="${phing.dir.phingdrupaldistributions}" />
 
-    <!-- First load the defaults. -->
+    <!-- First load the internal defaults from phing-drupal-distributions. -->
     <property file="${internal.build.dir}/build.default.properties" override="true"/>
 
-    <!-- Next, load the local properties. -->
+    <!-- Next, load the distribution's defaults. -->
+    <property file="${phing.dir}/build.default.properties" override="true"/>
+
+    <!-- Finally, load the user's local defaults. -->
     <property file="${phing.dir}/build.properties" override="true"/>
   </target>
 
-  <!-- Sets up the build artifacts directory so that we can put things there. -->
-  <target name="internal:setup-dirs" depends="internal:load-properties" hidden="true">
+  <target name="internal:setup-dirs"
+          depends="internal:load-properties"
+          description="Sets up the build artifacts directory so that we can put things there."
+          hidden="true">
     <property name="build.tools.dir" value="${build.artifacts.dir}/tools"/>
 
     <mkdir dir="${build.artifacts.dir}"/>
