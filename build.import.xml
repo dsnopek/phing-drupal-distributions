@@ -58,10 +58,24 @@
   </target>
 
   <target name="clean"
-          depends="init"
+          depends="init, clean-temp, clean-profile"
           description="Clean up all the files created by the build process.">
+  </target>
+
+  <target name="clean-temp"
+          depends="init"
+          description="Clean up temporary files.">
     <delete dir="${build.artifacts.temp.dir}" quiet="true"/>
-    <!-- TODO: we need to also remove the stuff built by the .make files! -->
+  </target>
+
+  <target name="clean-profile"
+          depends="init"
+          description="Clean files created when making the profile.">
+    <delete quiet="true">
+      <filelist dir="${phing.dir}/modules" files="${build.artifacts.profile.modules.dirs}"/>
+      <filelist dir="${phing.dir}/themes" files="${build.artifacts.profile.themes.dirs}"/>
+      <filelist dir="${phing.dir}/libraries" files="${build.artifacts.profile.libraries.dirs}"/>
+    </delete>
   </target>
 
   <!-- =====================================================================
