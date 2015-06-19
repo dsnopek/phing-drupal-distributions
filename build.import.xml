@@ -6,15 +6,25 @@
     <echo msg="A good way to get started is to create a build.properties file which tells phing about your environment and then run 'phing test' which will run the Behat tests and make sure that ${phing.project.name} is working correctly in your environment."/>
   </target>
 
-  <target name="make-profile"
-          depends="init, setup-drush"
-          description="Build the modules, libraries and themes for this profile."
+  <target name="check-profile"
+          depends="init"
+          description="Checks if the profile is built or not."
+          hidden="true">
+    <property name="project.check-profile" value="false"/>
+    <available-filelist property="project.check-profile">
+      <filelist dir="${phing.dir}/modules" files="${build.artifacts.profile.modules.dirs}"/>
+      <filelist dir="${phing.dir}/themes" files="${build.artifacts.profile.themes.dirs}"/>
+      <filelist dir="${phing.dir}/libraries" files="${build.artifacts.profile.libraries.dirs}"/>
+    </available-filelist>
+  </target>
+
+  <target name="make-profile-upstream"
+          depends="init, setup-drush, check-profile"
+          description="Build the modules, libraries and themes for this profile using ${drupal.make.profile-upstream}"
           unless="project.make-profile.skip">
     <if>
       <or>
-        <!-- TODO: we should be able to do better than this... -->
-        <not><available file="${phing.dir}/modules/contrib" type="dir"/></not>
-        <not><available file="${phing.dir}/modules/${phing.project.name}" type="dir"/></not>
+        <isfalse value="${project.check-profile}"/>
         <and>
           <isset property="project.make-profile.rebuild"/>
           <istrue value="${project.make-profile.rebuild}"/>
@@ -25,7 +35,7 @@
         <drush command="make" assume="yes">
           <option name="no-core"/>
           <option name="contrib-destination">.</option>
-          <param>${drush.make.file}</param>
+          <param>${drush.make.profile-upstream}</param>
           <option name="concurrency">${drush.make.concurrency}</option>
         </drush>
 
@@ -33,16 +43,16 @@
         <property name="project.make-profile.skip" value="true"/>
       </then>
       <else>
-        <echo msg="Profile has already been made. Run 'phing rebuild-profile' to force it to be made again."/>
+        <echo msg="Profile has already been made. Run 'phing rebuild-profile-upstream' to force it to be made again."/>
       </else>
     </if>
   </target>
 
-  <target name="rebuild-profile"
+  <target name="rebuild-profile-upstream"
           depends="init"
           description="Force a rebuild of the modules, libraries and themes for this profile.">
 
-    <phingcall target="make-profile">
+    <phingcall target="make-profile-upstream">
       <property name="project.make-profile.rebuild" value="1"/>
     </phingcall>
   </target>
@@ -50,7 +60,8 @@
   <target name="clean"
           depends="init"
           description="Clean up all the files created by the build process.">
-    <delete dir="${build.artifacts.dir}" quiet="true"/>
+    <delete dir="${build.artifacts.temp.dir}" quiet="true"/>
+    <!-- TODO: we need to also remove the stuff built by the .make files! -->
   </target>
 
   <!-- =====================================================================
@@ -129,6 +140,10 @@
          we should do it sparingly, in the cases where we see targets that are
          frequently being re-run needlessly. -->
     <property name="internal.done.init" value="true"/>
+
+    <!-- Load custom Tasks. -->
+    <taskdef name="available-filelist" classname="AvailableFileListTask"
+             classpath="${internal.build.dir}/lib" />
   </target>
 
   <target name="internal:load-properties"
@@ -152,14 +167,14 @@
 
   <target name="internal:setup-dirs"
           depends="internal:load-properties"
-          description="Sets up the build artifacts directory so that we can put things there."
+          description="Sets up the build directories for build artifacts."
           unless="internal.done.setup-dirs"
           hidden="true">
     <property name="internal.done.setup-dirs" value="true"/>
 
-    <property name="build.tools.dir" value="${build.artifacts.dir}/tools"/>
-
-    <mkdir dir="${build.artifacts.dir}"/>
+    <!-- Create temp directory and it's children. -->
+    <property name="build.tools.dir" value="${build.artifacts.temp.dir}/tools"/>
+    <mkdir dir="${build.artifacts.temp.dir}"/>
     <mkdir dir="${build.tools.dir}"/>
   </target>
 </project>
