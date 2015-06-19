@@ -47,7 +47,7 @@
         <property name="project.make-profile.skip" value="true"/>
       </then>
       <else>
-        <echo msg="Profile has already been made. Run 'phing rebuild-profile-upstream' to force it to be made again."/>
+        <echo msg="Profile has already been built. Run 'phing rebuild-profile-upstream' to force it to be built again."/>
       </else>
     </if>
   </target>
@@ -79,7 +79,7 @@
         <property name="project.make-profile.skip" value="true"/>
       </then>
       <else>
-        <echo msg="Profile has already been made. Run 'phing rebuild-profile-dev' to force it to be made again."/>
+        <echo msg="Profile has already been built. Run 'phing rebuild-profile-dev' to force it to be built again."/>
       </else>
     </if>
   </target>
@@ -93,7 +93,6 @@
 
   <target name="rebuild-profile-upstream"
           description="Force a rebuild of the modules, libraries and themes for this profile using the development code from upstream.">
-
     <phingcall target="make-profile-upstream">
       <property name="project.make-profile.rebuild" value="1"/>
     </phingcall>
@@ -101,7 +100,6 @@
 
   <target name="rebuild-profile-dev"
           description="Force a rebuild of the modules, libraries and themes for this profile using the development code you're working on.">
-
     <!-- TODO: this one is a little tricky, because we don't want to wipe out the existing
          Git clones, but instead pull from upstream again. Then we want to run the .make files
          in the modules directly, rather than running the main .make file again. -->
@@ -116,11 +114,111 @@
   </target>
 
   <!-- =====================================================================
+       Core build targets: Building core from .make files and adding profile.
+       ===================================================================== -->
+
+  <target name="add-profile-to-core"
+          depends="internal:load-properties"
+          description="Add profile to core in a platform independent way."
+          hidden="true">
+    <!-- TODO: we should copy on platforms that don't support symlinks! I think we
+         can even do some magic with <uptodate> to only copy if something has changed. -->
+    <symlink link="${build.core.dir}/profiles/${drupal.profile}" target="${phing.dir}"/>
+  </target>
+
+  <target name="make-core-upstream"
+          depends="init, setup-drush, make-profile-upstream"
+          description="Builds core somewhere the webserver can find it using the development code from upstream."
+          unless="project.make-core.skip">
+    <if>
+      <or>
+        <not>
+          <available file="${build.core.dir}"/>
+        </not>
+        <and>
+          <isset property="project.make-core.rebuild"/>
+          <istrue value="${project.make-core.rebuild}"/>
+        </and>
+      </or>
+      <then>
+
+        <drush command="make" assume="yes">
+          <param>${drush.make.core}</param>
+          <param>${build.core.dir}</param>
+          <option name="concurrency">${drush.make.concurrency}</option>
+        </drush>
+
+        <!-- Set property to prevent target from being executed multiple times -->
+        <property name="project.make-core.skip" value="true"/>
+      </then>
+      <else>
+        <echo msg="Core has already been built. Run 'phing rebuild-core-upstream' to force it to be built again."/>
+      </else>
+    </if>
+
+    <phingcall target="add-profile-to-core"/>
+  </target>
+
+  <target name="make-core-dev"
+          depends="init, setup-drush, make-profile-dev"
+          description="Builds core somewhere the webserver can find it using the development code you're working on."
+          unless="project.make-core.skip">
+    <if>
+      <or>
+        <not>
+          <available file="${build.core.dir}"/>
+        </not>
+        <and>
+          <isset property="project.make-core.rebuild"/>
+          <istrue value="${project.make-core.rebuild}"/>
+        </and>
+      </or>
+      <then>
+
+        <drush command="make" assume="yes">
+          <param>${drush.make.core}</param>
+          <param>${build.core.dir}</param>
+          <option name="concurrency">${drush.make.concurrency}</option>
+        </drush>
+
+        <!-- Set property to prevent target from being executed multiple times -->
+        <property name="project.make-core.skip" value="true"/>
+      </then>
+      <else>
+        <echo msg="Core has already been built. Run 'phing rebuild-core-dev' to force it to be built again."/>
+      </else>
+    </if>
+
+    <phingcall target="add-profile-to-core"/>
+  </target>
+
+  <target name="make-core"
+          depends="internal:load-properties"
+          description="Builds core somewhere the webserver can find it using the the default build mode (${build.mode})."
+          unless="project.make-core.skip">
+    <phingcall target="make-core-${build.mode}"/>
+  </target>
+
+  <target name="rebuild-core-upstream"
+          description="Force a rebuild of core using the development code from upstream.">
+    <phingcall target="make-core-upstream">
+      <property name="project.make-core.rebuild" value="1"/>
+    </phingcall>
+  </target>
+
+  <target name="rebuild-core-dev"
+          description="Builds core somewhere the webserver can find it using the development code you're working on.">
+    <phingcall target="make-core-dev">
+      <property name="project.make-core.rebuild" value="1"/>
+    </phingcall>
+  </target>
+
+  <!-- =====================================================================
        Clean-up targets: Deleting build artifacts.
        ===================================================================== -->
 
   <target name="clean"
-          depends="init, clean-temp, clean-profile"
+          depends="init, clean-temp, clean-profile, clean-core"
           description="Clean up all the files created by the build process.">
   </target>
 
@@ -138,6 +236,12 @@
       <filelist dir="${phing.dir}/themes" files="${build.artifacts.profile.themes.dirs}"/>
       <filelist dir="${phing.dir}/libraries" files="${build.artifacts.profile.libraries.dirs}"/>
     </delete>
+  </target>
+
+  <target name="clean-core"
+          depends="init"
+          description="Clean files created when making core.">
+    <delete dir="${build.core.dir}" quiet="true"/>
   </target>
 
   <!-- =====================================================================
