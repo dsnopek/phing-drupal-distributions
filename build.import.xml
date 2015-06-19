@@ -2,8 +2,8 @@
 
 <project name="phingdrupaldistributions" phingVersion="2.10.0" default="usage">
   <target name="usage" depends="init">
-    <echo msg="Hello, ${phing.project.name}!"/>
-    <!-- TODO: Display some tips on how to use this build script! -->
+    <echo msg="Hello! Phing is used to allow developers to easily build, install and test ${phing.project.name}!"/>
+    <echo msg="A good way to get started is to create a build.properties file which tells phing about your environment and then run 'phing test' which will run the Behat tests and make sure that ${phing.project.name} is working correctly in your environment."/>
   </target>
 
   <target name="make-profile"
@@ -115,12 +115,28 @@
   <target name="init"
           depends="internal:load-properties"
           description="Performs the internal setup necessary to run ALL normal tasks."
+          unless="internal.done.init"
           hidden="true">
+    <!-- We use this pattern for a lot of the "fundamental" targets. Normally, this
+         isn't necessary because phing keeps track of the dependencies that have
+         already run. But if we use 'phingcall' it resets the list of run dependencies
+         (but not the properties) so it'll run re-run targets it's already run.
+
+         By putting unless="internal.done.XXX" in the target and setting a property
+         we can prevent the target from being re-run!
+
+         We shouldn't do this for every target, because it's an ugly pattern. Instead
+         we should do it sparingly, in the cases where we see targets that are
+         frequently being re-run needlessly. -->
+    <property name="internal.done.init" value="true"/>
   </target>
 
   <target name="internal:load-properties"
           description="Loads the build.properties with the correct defaults set."
+          unless="internal.done.load-properties"
           hidden="true">
+    <property name="internal.done.load-properties" value="true"/>
+
     <!-- Make an alias to our internal build dir that's easier to type. -->
     <property name="internal.build.dir" value="${phing.dir.phingdrupaldistributions}" />
 
@@ -137,7 +153,10 @@
   <target name="internal:setup-dirs"
           depends="internal:load-properties"
           description="Sets up the build artifacts directory so that we can put things there."
+          unless="internal.done.setup-dirs"
           hidden="true">
+    <property name="internal.done.setup-dirs" value="true"/>
+
     <property name="build.tools.dir" value="${build.artifacts.dir}/tools"/>
 
     <mkdir dir="${build.artifacts.dir}"/>
