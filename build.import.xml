@@ -279,10 +279,6 @@
     -->
   </target>
 
-  <!-- TODO: We should have a "setup-git" task that errors if it can't find the
-       'git' program on the current path and automatically installs
-       VersionControl_Git if found (putting it on the PHP class path). -->
-
   <target name="setup-composer"
           depends="init, internal:setup-dirs"
           description="Setup composer so that we can use it to install stuff."
