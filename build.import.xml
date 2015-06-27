@@ -214,6 +214,60 @@
   </target>
 
   <!-- =====================================================================
+       Install targets: Installing Drupal.
+       ===================================================================== -->
+
+  <target name="install-drush"
+          depends="init, make-core, setup-drush"
+          description="Install Drupal using Drush."
+          unless="project.install.skip">
+    <if>
+      <or>
+        <not>
+          <available file="${build.core.dir}/sites/${drush.site-install.sites_subdir}/settings.php" />
+        </not>
+        <and>
+          <isset property="project.install.reinstall"/>
+          <istrue value="${project.install.reinstall}"/>
+        </and>
+      </or>
+      <then>
+        <drush command="site-install" root="${build.core.dir}" assume="yes">
+          <param>${drupal.profile}</param>
+          <option name="db-url">${drush.site-install.db_url}</option>
+          <option name="db-prefix">${drush.site-install.db_prefix}</option>
+          <option name="site-name">${drush.site-install.site_name}</option>
+          <option name="site-mail">${drush.site-install.site_mail}</option>
+          <option name="account-name">${drush.site-install.account_name}</option>
+          <option name="account-pass">${drush.site-install.account_pass}</option>
+          <option name="account-mail">${drush.site-install.account_mail}</option>
+          <option name="sites-subdir">${drush.site-install.sites_subdir}</option>
+        </drush>
+
+        <!-- Set property to prevent target from being executed multiple times -->
+        <property name="project.install.skip" value="true"/>
+      </then>
+      <else>
+        <echo msg="Site has already been installed. Run 'phing reinstall-drush' to force it to be installed again."/>
+      </else>
+    </if>
+  </target>
+
+  <target name="reinstall-drush"
+          description="Force a reinstall of Drupal using Drush.">
+    <phingcall target="install-drush">
+      <property name="project.install.reinstall" value="1"/>
+    </phingcall>
+  </target>
+
+  <target name="install"
+          depends="internal:load-properties"
+          description="Install Drupal using ${install.mode}."
+          unless="project.install.skip">
+    <phingcall target="install-${install.mode}"/>
+  </target>
+
+  <!-- =====================================================================
        Clean-up targets: Deleting build artifacts.
        ===================================================================== -->
 
