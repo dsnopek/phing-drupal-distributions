@@ -379,6 +379,10 @@
     <!-- Load custom Tasks. -->
     <taskdef name="available-filelist" classname="AvailableFileListTask"
              classpath="${internal.build.dir}/lib" />
+    <taskdef name="daemon-start" classname="DaemonStartTask"
+             classpath="${internal.build.dir}/lib" />
+    <taskdef name="daemon-stop" classname="DaemonStopTask"
+             classpath="${internal.build.dir}/lib" />
   </target>
 
   <target name="internal:load-properties"
