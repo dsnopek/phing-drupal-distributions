@@ -326,25 +326,30 @@
     <!-- Register as custom Phing task -->
     <taskdef name="drush" classname="DrushTask"
              classpath="${build.tools.phing.drush.dir}" />
-
-    <!-- Run drush from the project Drupal directory -->
-    <!--
-    <property name="drush.root" value="${project.drupal.dir}"/>
-    -->
   </target>
 
   <target name="setup-composer"
           depends="init, internal:setup-dirs"
           description="Setup composer so that we can use it to install stuff."
           hidden="true">
-     <property name="build.tools.composer" value="${build.tools.dir}/composer.phar" />
 
+     <!-- First, check for system composer. -->
+     <exec command="which composer" outputProperty="build.tools.composer"/>
+
+     <!-- If not available, then we download our own local composer. -->
      <if>
-       <not>
-         <available file="${build.tools.composer}"/>
-       </not>
+       <isfalse value="${build.tools.composer}"/>
        <then>
-         <php expression="$argv = array('--install-dir', '${build.tools.dir}'); eval('?>'.file_get_contents('https://getcomposer.org/installer'))" />
+         <property name="build.tools.composer" value="${build.tools.dir}/composer.phar" override="true"/>
+
+         <if>
+           <not>
+             <available file="${build.tools.composer}"/>
+           </not>
+           <then>
+             <php expression="$argv = array('--install-dir', '${build.tools.dir}'); eval('?>'.file_get_contents('https://getcomposer.org/installer'))" />
+           </then>
+         </if>
        </then>
      </if>
   </target>
