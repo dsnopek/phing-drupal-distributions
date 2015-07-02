@@ -268,6 +268,43 @@
   </target>
 
   <!-- =====================================================================
+       Test targets: Running the tests.
+       ===================================================================== -->
+
+  <target name="selenium-start"
+          depends="init, setup-selenium"
+          description="Start running Selenium in the background."
+          unless="project.selenium.skip">
+    <if>
+      <not>
+        <available file="${build.tools.selenium.pid}"/>
+      </not>
+      <then>
+        <daemon-start command="java -jar ${build.tools.selenium}" pid="${build.tools.selenium.pid}"/>
+        <echo msg="Selenium started. Run 'phing selenium-stop' to stop it."/>
+      </then>
+      <else>
+        <echo msg="Selenium already running. Run 'phing selenium-stop' to stop it."/>
+      </else>
+    </if>
+  </target>
+
+  <target name="selenium-stop"
+          depends="init"
+          description="Stop running Selenium in the background.">
+    <if>
+      <available file="${build.tools.selenium.pid}"/>
+      <then>
+        <daemon-stop pid="${build.tools.selenium.pid}"/>
+        <delete file="${build.tools.selenium.pid}" quiet="true"/>
+      </then>
+      <else>
+        <echo msg="Couldn't find Selenium pid file. We can only assume it isn't running!"/>
+      </else>
+    </if>
+  </target>
+
+  <!-- =====================================================================
        Clean-up targets: Deleting build artifacts.
        ===================================================================== -->
 
@@ -352,6 +389,21 @@
          </if>
        </then>
      </if>
+  </target>
+
+  <target name="setup-selenium"
+          depends="init, internal:setup-dirs"
+          description="Download Selenium."
+          unless="project.selenium.skip">
+    <property name="build.tools.selenium" value="${build.tools.dir}/selenium.jar"/>
+    <if>
+      <not>
+        <available file="${build.tools.selenium}"/>
+      </not>
+      <then>
+        <httpget url="${build.tools.selenium.url}" dir="${build.tools.dir}" filename="selenium.jar" followRedirects="true" />
+      </then>
+    </if>
   </target>
 
   <!-- =====================================================================
