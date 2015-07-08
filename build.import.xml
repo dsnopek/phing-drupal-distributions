@@ -406,6 +406,12 @@
     </if>
   </target>
 
+  <target name="setup-all"
+          depends="init, setup-drush, setup-composer, setup-selenium"
+          description="Run all setup targets so everything is ready to hack!">
+    <!-- Everything in the dependencies! -->
+  </target>
+
   <!-- =====================================================================
        Internal targets: Used for really low-level setup.
        ===================================================================== -->
